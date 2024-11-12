@@ -1,0 +1,21 @@
+{
+    "authToken": "",
+    "masterHost": "",
+    "username": "",
+    "apiKey": "",
+    "password": "",
+    "twoFaSecret": "",
+    "currency": "trx",
+    "bustThreshold": -1,
+    "recoverThreshold": 85,
+    "sudoPassword": "",
+    "simulationMode": "false",
+    "simulationStartBalance": 100,
+    "simulationTotalBets": 87600000,
+    "simulatedRecoveryPot": 60000,
+    "apiServer": "",
+    "withdrawAddress": "",
+    "depositeAddress": "",
+    "privateKey": "",
+    "tronApiKey" : ""
+}
