@@ -1,0 +1,73 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #000;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+#openStakeButton {
+  margin: 10px 0;
+  padding: 10px 20px;
+  background-color: #444; /* Dark grey background */
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  border: none;
+  /* 3D effect styles */
+  border-bottom: 4px solid #333; /* Darker shade for the bottom border to give depth */
+  box-shadow: 0 4px #333; /* Shadow that complements the border to give the 3D effect */
+  transition: transform 0.1s ease, box-shadow 0.1s ease; /* Smooth transition for click effect */
+}
+
+#openStakeButton:active {
+  transform: translateY(4px); /* Pushes the button down when clicked */
+  box-shadow: 0 0 #333; /* Adjusts the shadow to maintain the effect when clicked */
+  border-bottom: none; /* Removes the bottom border to enhance the effect */
+}
+
+/* ... other styles ... */
+
+#stakeMirror, #joinButton {
+  /* Keep the existing styles for these elements, but remove the styles related to #openStakeButton */
+  margin: 10px 0;
+  padding: 10px 20px;
+  background-color: #444; /* Dark grey background */
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+p {
+  margin: 10px 0;
+  font-size: 18px;
+}
+
+.alphaverse-logo {
+  margin: 20px 0;
+  width: auto; /* Adjust as needed */
+  height: 400;
+}
+
+.mrbtc-logo {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 100px; /* Adjust as needed */
+  height: auto;
+}

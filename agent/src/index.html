@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>ALPHAVERSE AGENT</title>
+    <link rel="stylesheet" href="index.css"/>
+    <script>
+        let stakeMirror = localStorage.getItem('stakeMirror') || 'stake.com';
+    </script>
+</head>
+<body>
+    <div class="container">
+        <select id="stakeMirror" name="stakeMirror">
+            <option value="stake.com">stake.com</option>
+            <option value="stake.bet">stake.bet</option>
+            <option value="stake.games">stake.games</option>
+            <option value="staketr.com">staketr.com</option>
+            <option value="staketr2.com">staketr2.com</option>
+            <option value="staketr3.com">staketr3.com</option>
+            <option value="staketr4.com">staketr4.com</option>
+            <option value="staketr5.com">staketr5.com</option>
+            <option value="stake.bz">stake.bz</option>
+            <option value="stake.jp">stake.jp</option>
+            <option value="stake.ac">stake.ac</option>
+            <option value="stake.icu">stake.icu</option>
+            <option value="stake.kim">stake.kim</option>
+            <option value="stake.ca">stake.ca</option>
+        </select>
+        <button id="openStakeButton" onclick="openStakeWindow()">Open stake.com</button>
+        <img src="AV_logo_black_background.png" alt="Alphaverse Logo" class="alphaverse-logo">
+        <p>Exclusive to Stake</p>
+        <button id="joinButton" onclick="window.open('https://www.stake.com/?c=22774e5f')">Click here to join</button>
+        <img src="mrbtcgambler.jpg" alt="MrBTC Gambler" class="mrbtc-logo">
+    </div>
+    <script src="preload.js"></script>
+    <script>
+        const stakeMirrorSelect = document.getElementById('stakeMirror');
+        stakeMirrorSelect.value = stakeMirror;
+        document.getElementById('openStakeButton').innerHTML = `Open ${stakeMirror}`;
+
+        stakeMirrorSelect.addEventListener('change', function() {
+            stakeMirror = this.value;
+            localStorage.setItem('stakeMirror', stakeMirror);
+            document.getElementById('openStakeButton').innerHTML = `Open ${stakeMirror}`;
+        });
+
+        function openStakeWindow() {
+            let closeTimeoutId;
+            const stakeWindow = window.open(`https://${stakeMirror}`);
+            stakeWindow.onclose = () => {
+                closeTimeoutId = null;
+            };
+
+            closeTimeoutId = window.setTimeout(() => {
+                if (!closeTimeoutId) {
+                    return;
+                }
+
+                stakeWindow.close();
+            }, 5000);
+        }
+
+        // Open Stake window on boot
+        openStakeWindow(); 
+        // Open stake window every hour
+        //window.setInterval(openStakeWindow, 60 * 60 * 1000); 
+
+        // Your existing Electron API request handler
+        window.electronAPI.setRequestHandler(async (message, payload) => {
+            let response;
+
+            try {
+                response = await fetch(`https://${stakeMirror}/_api/graphql`, {
+                    "headers": {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+                        "accept": "*/*",
+                        "accept-language": "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7",
+                        "cf-device-type": "",
+                        "content-type": "application/json",
+                        "sec-ch-ua": "\"Google Chrome\";v=\"107\", \"Chromium\";v=\"107\", \"Not=A?Brand\";v=\"24\"",
+                        "sec-ch-ua-mobile": "?0",
+                        "sec-ch-ua-platform": "\"Windows\"",
+                        "sec-fetch-dest": "empty",
+                        "sec-fetch-mode": "cors",
+                        "sec-fetch-site": "same-origin",
+                        "x-access-token": payload.apiKey,
+                        "x-geoip-country": "DE",
+                        "x-geoip-state": "DE-NW",
+                        "x-language": "de",
+                        "cookie": payload.cookie
+                    },
+                    "referrer": `https://${stakeMirror}/`,
+                    "referrerPolicy": "strict-origin-when-cross-origin",
+                    "body": payload.body,
+                    "method": "POST",
+                    "mode": "cors",
+                    "credentials": "include"
+                }).then(response => response.json());
+            } catch (e) {
+                console.error(e);
+            }
+
+            window.electronAPI.sendApiResponse({...response, ...{id: payload.id}});
+        });
+    </script>
+</body>
+</html>

@@ -1,5 +1,36 @@
 {
+  "name": "alphaverse",
+  "version": "1.0.4",
+  "description": "Alphaverse: The Casino Master of the Multiverse. Roll the dice and dominate the digital cosmos with our state-of-the-art betting bot!",
+  "type": "module",
+  "scripts": {
+    "server": "node server/index.js",
+    "client": "node client/index.js",
+    "getIPs": "node server/getIPs.js",
+    "2faAPI": "node server/2faServer.js",
+    "apiServer": "node server/2faServer.js",
+    "postinstall": "node client/fix-tr46.js",
+    "dicebot": "node client/Infinite_code_dual_no_Vault_v1.4.js"
+  },
   "dependencies": {
-    "tronweb": "^6.0.0"
+    "axios": "^1.7.2",
+    "express": "^4.19.2",
+    "fs": "^0.0.1-security",
+    "https-proxy-agent": "^7.0.4",
+    "javascript-obfuscator": "^4.1.1",
+    "moment": "^2.30.1",
+    "node-2fa": "^2.0.3",
+    "node-fetch": "^3.3.2",
+    "node-fetch-retry-timeout": "^1.2.1",
+    "pug": "^3.0.3",
+    "punycode": "^2.3.1",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
+    "tr46": "^5.0.0",
+    "upgrade": "^1.1.0",
+    "uuid": "^10.0.0",
+    "whatwg-url": "^14.0.0",
+    "tronweb": "^6.0.0",
+    "ws": "^8.13.0" 
   }
 }

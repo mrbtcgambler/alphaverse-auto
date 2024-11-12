@@ -1,0 +1,95 @@
+extends layout
+
+block layout-content
+    div#topbar
+        div.container-xl
+            div.d-md-flex.justify-content-between
+                div.px-2.text-center
+                    | <b>Bankroll:</b> {{ new Intl.NumberFormat('en-US', { minimumFractionDigits: 8 }).format(bankroll) }} {{ currency }} {{ currencyConversionRate ? ' / ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(bankroll * currencyConversionRate) : null }}
+                div.px-2.text-center.cursor-pointer(@click="resetProfit", title="Click to reset profit counter")
+                    | <b>Profit:</b> {{ new Intl.NumberFormat('en-US', { minimumFractionDigits: 8 }).format(profit) }} {{ currency }} {{ currencyConversionRate ? ' / ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(profit * currencyConversionRate) : null }}
+                div.px-2.text-center
+                    | <b>Bets/h:</b> {{ new Intl.NumberFormat('en-US').format(totalBetsPerHour) }}
+                div.px-2.text-center
+                    | <b>Wager:</b> {{ new Intl.NumberFormat('en-US', { minimumFractionDigits: 8 }).format(wager) }} {{ currency }} {{ currencyConversionRate ? ' / ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(wager * currencyConversionRate) : null }}
+                div.px-2.text-center
+                    | <b>Clients:</b> {{ clients.length }}
+                div.px-2.text-center.cursor-pointer(@click="resetTimer", title="Click to reset runtime")
+                    | <b>Time:</b> {{ formattedRuntime(runtime / 1000) }}
+                div.px-2.text-center
+                    b.cursor-pointer(@click="toggleViewMode") {{ presenterMode ? 'Presenter Mode' : 'View Mode' }}
+
+    div.container-xl
+        div(v-if="missingUsernames.length").row.mb-3
+            div.col-sm
+                div.alert.alert-danger.mb-0 ⚠ Missing users:&nbsp;
+                    span(:class="{ 'blur': presenterMode }") {{ missingUsernames.sort().join(', ') }}
+
+        div.row
+            div.col-sm
+                div.table-responsive
+                    table.table.table-hover.table-sm.clients-list
+                        thead.thead-dark
+                            tr
+                                th(class="text-right") #
+                                th
+                                    span Name&nbsp;
+                                th(class="text-center") VIP
+                                th(class="text-right") Balance
+                                th(class="text-right") Vault
+                                th(class="text-center") State
+                                th(class="text-center") Bets/h
+                                th(class="text-center") Busts
+                                th(class="text-center") Stage
+                                th(class="text-center") version
+                                th(class="text-right") Profit
+                                th(class="text-right") Wager                             
+                                th(class="text-right") Wins
+                                th(class="text-right") Losses
+                                th(class="text-right") Bet size
+                                th(class="text-right") Streak
+                                th(class="text-right", title="Highest losing streak") Max LS
+                                th(class="text-right")
+                                    span IP address&nbsp;
+                                th(class="text-right", title="Request time") RT
+                                th Last bet
+                                th(class="text-right") Uptime
+                                th(class="text-right")
+                                    button.btn.btn-success.btn-sm.mr-1(type="button", title="Resume all paused bots", @click="resumeAllBetting()") ▶
+                                    button.btn.btn-danger.btn-sm.mr-1(type="button", title="Pause all bots", @click="pauseAllBetting()") ⏸
+                                    button.btn.btn-primary.btn-sm(type="button", title="Update all clients", @click="updateAllClients()") 🔁
+                        tbody
+                            tr(v-for="(client, index) in clients")
+                                td(class="text-right") {{ index + 1 }}
+                                td(:class="{ 'blur': presenterMode }") {{ client.username }}
+                                td(class="text-center" :class="{ 'text-success': (client.vipProgress || {progress: 0}).progress < 1 || (client.vipProgress || {progress: 0}).progress >= 90 }") {{ (client.vipProgress || {flag: ''}).flag }} ({{ (client.vipProgress || {progress: 0}).progress.toFixed(2) }}%)
+                                td(class="text-right" :class="{ 'text-success': client.funds.available >= client.recoverAmount }") {{ new Intl.NumberFormat('en-US', { minimumFractionDigits: 8 }).format(client.funds.available) }} {{ client.currency.toUpperCase() }}
+                                td(class="text-right" :class="{ 'text-success': client.funds.vault >= client.recoverAmount }") {{ new Intl.NumberFormat('en-US', { minimumFractionDigits: 8 }).format(client.funds.vault) }} {{ client.currency.toUpperCase() }}
+                                td(class="text-center" :class="{ 'text-success': client.state === 'ok', 'text-danger': client.state === 'bust' }") {{ client.state }}
+                                td(class="text-center") {{ new Intl.NumberFormat('en-US').format(client.diceBotState.betsPerHour) }}
+                                td(class="text-center") {{ client.busts }}
+                                td(class="text-center" :class="{ 'text-danger': client.diceBotState.stage === 2 }") {{ client.diceBotState.stage }}
+                                td(class="text-center") {{ (client.diceBotState.version || '-') }}
+                                td(class="text-right") {{ new Intl.NumberFormat('en-US', { minimumFractionDigits: 8 }).format(client.diceBotState.profit) }} {{ client.currency.toUpperCase() }}
+                                td(class="text-right") {{ client.diceBotState.wager.toFixed(8) }} {{ client.currency.toUpperCase() }}
+                                td(class="text-right") {{ (client.diceBotState.wins) }}
+                                td(class="text-right") {{ (client.diceBotState.losses) }} 
+                                td(class="text-right") {{ new Intl.NumberFormat('en-US', { minimumFractionDigits: 8 }).format(client.diceBotState.betSize) }} {{ client.currency.toUpperCase() }}
+                                td(class="text-right") {{ client.diceBotState.currentStreak }}
+                                td(class="text-right") {{ client.diceBotState.highestLosingStreak || '-' }}
+                                td(class="text-right", :class="{ 'blur': presenterMode, 'text-warning': isIpDuplicate(client.ipAddress) }") {{ client.ipAddress }}
+                                td(class="text-right") {{ new Intl.NumberFormat('en-US').format(client.latency) }} ms
+                                td(style="width: 140px" :class="{ 'text-danger': client.diceBotState.lastBet && new Date() - new Date(client.diceBotState.lastBet) >= 60 * 5 * 1000 }") {{ client.diceBotState.lastBet ? getMoment(client.diceBotState.lastBet) : '-' }}
+                                td(class="text-right") {{ formattedRuntime((client.runtime || 0) / 1000) }}
+                                td(class="text-right")
+                                    div.btn-group
+                                        button.btn.btn-success.btn-sm(type="button", title="Resume betting", @click="resumeBetting(client.username)", v-if="client.diceBotState && client.diceBotState.paused") ▶
+                                        button.btn.btn-warning.btn-sm(type="button", title="Pause betting", @click="pauseBetting(client.username)", v-if="client.diceBotState && !client.diceBotState.paused") ⏸
+                                        button.btn.btn-danger.btn-sm(type="button", title="WithdrawVault", @click="WithdrawVault(client.username)") 💰
+                                        button.btn.btn-success.btn-sm(type="button", title="Restart dice bot", @click="restartDiceBot(client.username)") 🔄
+
+                                        button.btn.btn-sm.btn-secondary.dropdown-toggle.dropdown-toggle-split(data-toggle="dropdown", aria-haspopup="true", aria-expanded="false", title="More actions")
+
+                                        div.dropdown-menu.text-small
+                                            a.dropdown-item(href="javascript:void(null)", @click="sendTip(client.username)") 🚀 Send tip to another user
+                                            a.dropdown-item(href="javascript:void(null)", @click="sendVault(client.username)") 💸 Send vault to another user

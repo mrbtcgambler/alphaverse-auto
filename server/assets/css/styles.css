@@ -1,0 +1,49 @@
+html, body {
+    background-color: #0f212e;
+    color: #FFF;
+}
+
+#app {
+    padding: 45px;
+}
+
+.text-small,
+.clients-list {
+    font-size: 0.8rem;
+}
+
+.blur {
+    filter: blur(5px);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+#topbar {
+    background-color: #213743;
+    box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    padding: 5px 0;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    font-size: 0.9rem;
+}
+
+/* Bootstrap overwrites */
+.table .thead-dark th {
+    background-color: #213743;
+    border-color: #1d303b;
+    vertical-align: middle;
+}
+
+.table td, .table th {
+    border-color: #1d303b;
+    vertical-align: middle;
+}
+
+.dropdown-item {
+    padding: .25rem 0.75rem;
+}

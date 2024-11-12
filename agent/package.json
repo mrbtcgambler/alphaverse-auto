@@ -1,0 +1,25 @@
+{
+  "name": "electron-http-proxy",
+  "productName": "electron-http-proxy",
+  "version": "1.0.4",
+  "description": "Electron HTTP Proxy",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "electron .",
+    "proxy": "node src/index.js",
+    "electron:serve": "electron .",
+    "electron:build": "electron-builder",
+    "obfuscate": "node obfuscate.js"
+  },
+  "keywords": [],
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "http": "^0.0.1-security",
+    "node-fetch": "^3.3.2",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "electron": "24.8.8",
+    "javascript-obfuscator": "^4.1.1"
+  }
+}
