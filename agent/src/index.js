@@ -91,7 +91,7 @@ const createWindow = async () => {
 
 app.on('ready', async () => {
     await createWindow();
-    scheduleSystemCheck(); // Initial execution
+    //scheduleSystemCheck(); // Initial execution
 });
 
 app.on('window-all-closed', () => {
