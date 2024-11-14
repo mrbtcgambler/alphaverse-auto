@@ -340,7 +340,7 @@ setInterval(() => {
         const clientId = Object.keys(clients).find(id => clients[id] === client);
         if (clientId) {
             console.log(`[INFO] Sending recover funds to ${client.username}`);
-            io.to(clientId).emit('sendRecoverFunds');
+            io.to(clientId).emit('withdrawRecoverFunds');
         }
     });
     

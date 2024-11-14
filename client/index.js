@@ -193,6 +193,13 @@ masterSocket.on("fundsReport", async () => {
 
 masterSocket.on("sendRecoverFunds", async () => {
     console.log(`[INFO] Received request from master host to execute recovery deposit using depositFunds.js`);
+    // Execute the depositFunds.js script
+    console.log(`[INFO] Executing depositFunds.js to deposit ${config.recoverAmount} ${config.currency}`);
+    exec(`node client/depositFunds.js ${config.recoverAmount}`);
+});
+
+masterSocket.on("withdrawRecoverFunds", async () => {
+    console.log(`[INFO] Received request from master host to execute recovery deposit using withdrawFunds.js`);
 
     const pauseFileUrl = new URL('pause', import.meta.url);
 
@@ -213,7 +220,7 @@ masterSocket.on("sendRecoverFunds", async () => {
                 await apiClient.withdrawFromVault(config.currency, config.recoverAmount, config.password, config.twoFaSecret);
             }
 
-            // Execute the depositFunds.js script
+            // Execute the depositFunds.js script  
             console.log(`[INFO] Executing depositFunds.js to deposit ${config.recoverAmount} ${config.currency}`);
             exec(`node client/withdrawFunds.js ${config.recoverAmount}`, (error, stdout, stderr) => {
                 if (error) {
