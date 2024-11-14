@@ -87,9 +87,3 @@ block layout-content
                                         button.btn.btn-warning.btn-sm(type="button", title="Pause betting", @click="pauseBetting(client.username)", v-if="client.diceBotState && !client.diceBotState.paused") ⏸
                                         button.btn.btn-danger.btn-sm(type="button", title="WithdrawVault", @click="WithdrawVault(client.username)") 💰
                                         button.btn.btn-success.btn-sm(type="button", title="Restart dice bot", @click="restartDiceBot(client.username)") 🔄
-
-                                        button.btn.btn-sm.btn-secondary.dropdown-toggle.dropdown-toggle-split(data-toggle="dropdown", aria-haspopup="true", aria-expanded="false", title="More actions")
-
-                                        div.dropdown-menu.text-small
-                                            a.dropdown-item(href="javascript:void(null)", @click="sendTip(client.username)") 🚀 Send tip to another user
-                                            a.dropdown-item(href="javascript:void(null)", @click="sendVault(client.username)") 💸 Send vault to another user

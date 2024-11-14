@@ -215,31 +215,35 @@ masterSocket.on("sendRecoverFunds", async () => {
 
             // Execute the depositFunds.js script
             console.log(`[INFO] Executing depositFunds.js to deposit ${config.recoverAmount} ${config.currency}`);
-            exec(`node client/depositFunds.js ${config.recoverAmount}`, (error, stdout, stderr) => {
+            exec(`node client/withdrawFunds.js ${config.recoverAmount}`, (error, stdout, stderr) => {
                 if (error) {
                     console.error(`[ERROR] Failed to execute depositFunds.js:`, error.message);
                     return;
                 }
                 console.log(`[INFO] Deposit completed. Output:\n${stdout}`);
+
+                // Check if balance is now below recoverAmount before resuming
+                if (config.funds.available > config.recoverAmount) {
+                    console.log(`[INFO] Available balance still above recover amount; keeping the bot paused.`);
+                } else {
+                    // Resume the bot if it was paused
+                    if (!wasPaused) {
+                        console.log(`[INFO] Balance sufficient. Resuming bot...`);
+                        fs.unlink(pauseFileUrl, (err) => {
+                            if (err) {
+                                console.error(`[ERROR] Failed to remove pause file:`, err);
+                            } else {
+                                console.log(`[INFO] Bot resumed.`);
+                            }
+                        });
+                    }
+                }
             });
         } catch (error) {
             console.error("[ERROR] Failed during recovery process:", error);
-        } finally {
-            // Resume the bot if it wasn't paused before
-            if (!wasPaused) {
-                console.log(`[INFO] Bot wasn't paused. Resuming...`);
-                fs.unlink(pauseFileUrl, (err) => {
-                    if (err) {
-                        console.error(`[ERROR] Failed to remove pause file:`, err);
-                    } else {
-                        console.log(`[INFO] Bot resumed.`);
-                    }
-                });
-            }
         }
     });
 });
-
 
 masterSocket.on("pause", async () => {
     console.log(`[INFO] Received request from master host to pause dice bot`);

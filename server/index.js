@@ -330,4 +330,18 @@ setInterval(() => {
 
         knownIpAddresses.push(client.ipAddress);
     }
+
+    const clientsWithRecoverPot = Object.values(clients).filter((client) => 
+        client.diceBotState?.state !== 'bust' && 
+        client.funds?.vault >= config.recoverAmount
+    );
+
+    clientsWithRecoverPot.forEach((client) => {
+        const clientId = Object.keys(clients).find(id => clients[id] === client);
+        if (clientId) {
+            console.log(`[INFO] Sending recover funds to ${client.username}`);
+            io.to(clientId).emit('sendRecoverFunds');
+        }
+    });
+    
 }, 1000)
