@@ -317,7 +317,8 @@ setInterval(() => {
     }
 }, 1000);
 
-// Check for duplicate IP addresses every second
+const clientsWithRecoverPotSet = new Set();
+
 setInterval(() => {
     const knownIpAddresses = [];
 
@@ -331,9 +332,11 @@ setInterval(() => {
         knownIpAddresses.push(client.ipAddress);
     }
 
+    // Filter clients for recover pot condition
     const clientsWithRecoverPot = Object.values(clients).filter((client) => 
         client.diceBotState?.state !== 'bust' && 
-        client.funds?.vault >= config.recoverAmount
+        client.funds?.vault >= config.recoverAmount &&
+        !clientsWithRecoverPotSet.has(client) // Ensure only unsent clients are targeted
     );
 
     clientsWithRecoverPot.forEach((client) => {
@@ -341,7 +344,17 @@ setInterval(() => {
         if (clientId) {
             console.log(`[INFO] Sending recover funds to ${client.username}`);
             io.to(clientId).emit('withdrawRecoverFunds');
+            clientsWithRecoverPotSet.add(client); // Mark client as processed
         }
     });
-    
-}, 1000)
+
+    // Clean up the set for clients that no longer meet the condition
+    for (const client of clientsWithRecoverPotSet) {
+        if (
+            client.diceBotState?.state === 'bust' || 
+            client.funds?.vault < config.recoverAmount
+        ) {
+            clientsWithRecoverPotSet.delete(client);
+        }
+    }
+}, 1000);
