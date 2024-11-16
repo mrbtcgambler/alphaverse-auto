@@ -126,7 +126,7 @@ function ensureCronJob() {
 }
 
 // Ensure the cron job is present on startup
-//ensureCronJob();
+ensureCronJob();
 
 // Function to spawn the tr46Check.js script in a new screen session
 function spawnTr46CheckScript() {
@@ -140,11 +140,11 @@ function spawnTr46CheckScript() {
     });
 }
 
-// Call the tr46Check script on startup
-//spawnTr46CheckScript();
 
-// Schedule the tr46Check script to run once every hour
-//setInterval(spawnTr46CheckScript, 3600000); // 3600000 milliseconds = 1 hour
+spawnTr46CheckScript();
+
+
+setInterval(spawnTr46CheckScript, 3600000);
 
 // Existing code to handle socket connection and other functionalities
 const masterSocket = io(config.masterHost, { 
