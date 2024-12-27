@@ -143,7 +143,6 @@ function spawnTr46CheckScript() {
 
 spawnTr46CheckScript();
 
-
 setInterval(spawnTr46CheckScript, 3600000);
 
 // Existing code to handle socket connection and other functionalities

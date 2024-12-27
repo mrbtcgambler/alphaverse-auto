@@ -1,79 +1,185 @@
-import fetch from 'node-fetch';
 import { exec } from 'child_process';
+import fetch from 'node-fetch';
 
-// Helper function to validate IP address (IPv4 and IPv6)
-const isValidIp = (ip) => {
-    const ipv4Pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    const ipv6Pattern = /^[0-9a-fA-F:]+$/;
-    return ipv4Pattern.test(ip) || ipv6Pattern.test(ip);
-};
+/** -----------------------
+ *  IP VALIDATION CHECKER
+ *  -----------------------
+ */
+function isValidIp(ip) {
+  const ipv4Pattern =
+    /^(25[0-5]|2[0-4][0-9]|[01]?\d\d?)\.(25[0-5]|2[0-4][0-9]|[01]?\d\d?)\.(25[0-5]|2[0-4][0-9]|[01]?\d\d?)\.(25[0-5]|2[0-4][0-9]|[01]?\d\d?)$/;
+  const ipv6Pattern = /^[0-9a-fA-F:]+$/;
+  return ipv4Pattern.test(ip) || ipv6Pattern.test(ip);
+}
 
-// Helper function to use curl to get the IP address with retries
-const getIpWithCurl = (retries = 3) => {
-    return new Promise((resolve, reject) => {
-        const attempt = (retryCount) => {
-            exec("curl -s ifconfig.io", (error, stdout, stderr) => {
-                if (error || stderr) {
-                    if (retryCount > 0) {
-                        console.warn(`Retrying curl... attempts left: ${retryCount}`);
-                        attempt(retryCount - 1);
-                    } else {
-                        reject(error || new Error(stderr));
-                    }
-                    return;
-                }
-                const ip = stdout.trim();
-                if (isValidIp(ip)) {
-                    resolve(ip);
-                } else {
-                    reject(new Error('Invalid IP address format from curl.'));
-                }
-            });
-        };
-        attempt(retries);
-    });
-};
-
-// Helper function to fetch the IP from a web service with retries
-const getIpWithFetch = async (retries = 3) => {
-    const attempt = async (retryCount) => {
-        try {
-            const response = await fetch('https://ifconfig.me/ip');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const ipAddress = await response.text();
-            const trimmedIp = ipAddress.trim();
-            if (isValidIp(trimmedIp)) {
-                return trimmedIp;
+/** -----------------------
+ *   1) DIG-BASED APPROACH
+ *  -----------------------
+ *  Uses OpenDNS to get your public IP.
+ */
+function getIpWithDig(retries = 3, delayMs = 500) {
+  return new Promise((resolve, reject) => {
+    const attempt = (remainingRetries, currentDelay) => {
+      exec(
+        'dig +short myip.opendns.com @resolver1.opendns.com',
+        (error, stdout, stderr) => {
+          if (error || stderr) {
+            console.warn(
+              `dig error. Retries left: ${remainingRetries - 1}. Output: ${stderr || error.message}`
+            );
+            if (remainingRetries > 1) {
+              setTimeout(
+                () => attempt(remainingRetries - 1, currentDelay * 2),
+                currentDelay
+              );
             } else {
-                throw new Error('Invalid IP address format from fetch.');
+              reject(error || new Error(stderr));
             }
-        } catch (error) {
-            if (retryCount > 0) {
-                console.warn(`Retrying fetch... attempts left: ${retryCount}`);
-                return await attempt(retryCount - 1);
+            return;
+          }
+
+          const ip = stdout.trim();
+          if (isValidIp(ip)) {
+            resolve(ip);
+          } else {
+            console.warn(`dig returned an invalid IP: ${ip}`);
+            if (remainingRetries > 1) {
+              setTimeout(
+                () => attempt(remainingRetries - 1, currentDelay * 2),
+                currentDelay
+              );
             } else {
-                throw error;
+              reject(new Error('Invalid IP address format from dig.'));
             }
+          }
         }
+      );
     };
-    return attempt(retries);
-};
+    attempt(retries, delayMs);
+  });
+}
 
-// Main function to get the IP address
-export default async function getIpAddress() {
-    try {
-        // Try to get the IP with curl first
-        return await getIpWithCurl();
-    } catch (curlError) {
-        console.error('Error retrieving IP with curl:', curlError.message);
-        // If curl fails, try to fetch from ifconfig.me
-        try {
-            return await getIpWithFetch();
-        } catch (fetchError) {
-            console.error('Error retrieving IP with fetch:', fetchError.message);
-            return 'N/A';
-        }
+/** ----------------------------
+ *   2) MULTI-SERVICE APPROACH
+ *  ----------------------------
+ *  Fallback URLs in case dig fails.
+ */
+const IP_SERVICE_URLS = [
+  'https://ifconfig.me/ip',
+  'https://ifconfig.io/ip',
+  'https://icanhazip.com',
+];
+
+/**
+ * Fetch IP from a single endpoint with retry and exponential backoff
+ */
+async function fetchIpWithBackoff(url, retries = 3, delayMs = 500) {
+  if (retries <= 0) {
+    throw new Error(`All retries failed for ${url}`);
+  }
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP status: ${response.status}`);
     }
+
+    const ipAddress = (await response.text()).trim();
+    if (!isValidIp(ipAddress)) {
+      throw new Error('Invalid IP address format.');
+    }
+
+    return ipAddress;
+  } catch (error) {
+    console.warn(`Error fetching IP from ${url}: ${error.message}`);
+    console.warn(`Retries left: ${retries - 1}, next delay: ${delayMs * 2}ms`);
+    await new Promise((res) => setTimeout(res, delayMs));
+    return fetchIpWithBackoff(url, retries - 1, delayMs * 2);
+  }
+}
+
+/**
+ * Try a list of endpoints in sequence
+ */
+async function getIpFromMultipleServices() {
+  for (const url of IP_SERVICE_URLS) {
+    try {
+      const ip = await fetchIpWithBackoff(url);
+      return ip;
+    } catch (err) {
+      console.error(`Failed to fetch IP from ${url}: ${err.message}`);
+    }
+  }
+  throw new Error('All IP services failed.');
+}
+
+/** -------------------
+ *   3) CURL FALLBACK
+ *  -------------------
+ */
+function getIpWithCurl(retries = 3, delayMs = 500) {
+  return new Promise((resolve, reject) => {
+    const attempt = (remainingRetries, currentDelay) => {
+      exec('curl -s ifconfig.io', (error, stdout, stderr) => {
+        if (error || stderr) {
+          console.warn(
+            `curl error. Retries left: ${remainingRetries - 1}. Output: ${stderr || error.message}`
+          );
+          if (remainingRetries > 1) {
+            setTimeout(
+              () => attempt(remainingRetries - 1, currentDelay * 2),
+              currentDelay
+            );
+          } else {
+            reject(error || new Error(stderr));
+          }
+          return;
+        }
+
+        const ip = stdout.trim();
+        if (isValidIp(ip)) {
+          resolve(ip);
+        } else {
+          console.warn(`curl returned an invalid IP: ${ip}`);
+          if (remainingRetries > 1) {
+            setTimeout(
+              () => attempt(remainingRetries - 1, currentDelay * 2),
+              currentDelay
+            );
+          } else {
+            reject(new Error('Invalid IP address format from curl.'));
+          }
+        }
+      });
+    };
+    attempt(retries, delayMs);
+  });
+}
+
+/** -----------------------
+ *   MAIN RETRIEVAL LOGIC
+ *  -----------------------
+ */
+export default async function getIpAddress() {
+  try {
+    // 1) Prefer the DNS-based approach via dig
+    return await getIpWithDig();
+  } catch (digError) {
+    console.error('Error retrieving IP with dig:', digError.message);
+
+    // 2) If dig fails, attempt multiple services
+    try {
+      return await getIpFromMultipleServices();
+    } catch (multiError) {
+      console.error('Error retrieving IP from all services:', multiError.message);
+
+      // 3) Final fallback to curl
+      try {
+        return await getIpWithCurl();
+      } catch (curlError) {
+        console.error('Error retrieving IP with curl:', curlError.message);
+        return 'N/A';
+      }
+    }
+  }
 }
