@@ -220,47 +220,117 @@ class StakeApi {
         if (!currency) throw new Error('Missing parameter `currency`.');
         if (!amount) return;
         if (!receiver) throw new Error('Missing parameter `receiver`.');
-
+    
         amount -= 0.00000001;
-
+    
+        // Fetch receiver user ID
         const receiverUserId = await this.request({
-            "query": "query SendTipMeta($name: String) {\n  user(name: $name) {\n    id\n    name\n    __typename\n  }\n  self: user {\n    id\n    hasTfaEnabled\n    isTfaSessionValid\n    balances {\n      available {\n        amount\n        currency\n        __typename\n      }\n      vault {\n        amount\n        currency\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n",
+            "query": `query SendTipMeta($name: String) {
+                user(name: $name) {
+                    id
+                    name
+                    __typename
+                }
+                self: user {
+                    id
+                    hasTfaEnabled
+                    isTfaSessionValid
+                    balances {
+                        available {
+                            amount
+                            currency
+                            __typename
+                        }
+                        vault {
+                            amount
+                            currency
+                            __typename
+                        }
+                        __typename
+                    }
+                    __typename
+                }
+            }`,
             "operationName": "SendTipMeta",
-            "variables": {"name": receiver}
+            "variables": { "name": receiver }
         }).then(result => {
             try {
                 return JSON.parse(result).data.user.id;
             } catch (e) {
-                console.error(e);
+                console.error("Error parsing user ID response:", e);
                 return null;
             }
         });
-
+    
+        if (!receiverUserId) {
+            throw new Error("Failed to fetch receiver user ID.");
+        }
+    
+        // Prepare variables for mutation
         const variables = {
             "userId": receiverUserId,
             "amount": amount,
             "currency": currency,
-            "isPublic": false,
             "chatId": "f0326994-ee9e-411c-8439-b4997c187b95"
         };
-
+    
         if (twoFaSecret) {
             variables.tfaToken = await this.generateTwoFaToken(twoFaSecret);
         }
-
+    
+        // Send tip mutation
         return this.request({
-            "query": "mutation SendTip($userId: String!, $amount: Float!, $currency: CurrencyEnum!, $isPublic: Boolean, $chatId: String!, $tfaToken: String) {\n  sendTip(\n    userId: $userId\n    amount: $amount\n    currency\n    isPublic\n    chatId\n    tfaToken\n  ) {\n    id\n    amount\n    currency\n    user {\n      id\n      name\n      __typename\n    }\n    sendBy {\n      id\n      name\n      balances {\n        available {\n          amount\n          currency\n          __typename\n        }\n        vault {\n          amount\n          currency\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n",
+            "query": `mutation SendTip($userId: String!, $amount: Float!, $currency: CurrencyEnum!, $chatId: String!, $tfaToken: String) {
+                sendTip(
+                    userId: $userId
+                    amount: $amount
+                    currency: $currency
+                    chatId: $chatId
+                    tfaToken: $tfaToken
+                ) {
+                    id
+                    amount
+                    currency
+                    user {
+                        id
+                        name
+                        __typename
+                    }
+                    sendBy {
+                        id
+                        name
+                        balances {
+                            available {
+                                amount
+                                currency
+                                __typename
+                            }
+                            vault {
+                                amount
+                                currency
+                                __typename
+                            }
+                            __typename
+                        }
+                        __typename
+                    }
+                    __typename
+                }
+            }`,
             "operationName": "SendTip",
             "variables": variables
         }).then(result => {
             try {
-                console.log(JSON.parse(result));
+                const parsedResult = JSON.parse(result);
+                console.log("Tip response:", parsedResult);
+                return parsedResult;
             } catch (e) {
-                console.error(e);
+                console.error("Error parsing tip response:", e);
                 return null;
             }
         });
     }
+    
 
     resetSeed() {
         return this.request({
