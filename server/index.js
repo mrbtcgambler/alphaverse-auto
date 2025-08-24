@@ -296,16 +296,16 @@ setInterval(() => {
         if (client.funds) {
             tableData.push({
                 username: client.username,
-                balance: client.funds.available ? client.funds.available.toFixed(8) + ' ' + client.currency.toUpperCase() : null,
-                vault: client.funds.vault ? client.funds.vault.toFixed(8) + ' ' + client.currency.toUpperCase() : null,
+                balance: client.funds.available ? client.funds.available.toFixed(8) + ' ' + client.currency.toUpperCase() : 0,
+                vault: client.funds.vault ? client.funds.vault.toFixed(8) + ' ' + client.currency.toUpperCase() : 0,
                 busts: client.busts,
                 state: client.state
             });
         } else {
             tableData.push({
                 username: client.username,
-                balance: null,
-                vault: null,
+                balance: 0,
+                vault: 0,
                 busts: client.busts,
                 state: client.state
             });
